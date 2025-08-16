@@ -1,0 +1,1 @@
+odin run main.odin -file -strict-style

@@ -1,0 +1,2 @@
+mkdir -p out
+odin build game/ -extra-linker-flags:"-Wl,-rpath /opt/homebrew/Cellar/odin/2025-08/libexec/vendor/raylib/macos-arm64" -define:RAYLIB_SHARED=true -build-mode:dll -out:out/game.dylib -strict-style
