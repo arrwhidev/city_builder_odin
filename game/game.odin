@@ -40,8 +40,10 @@ game_update :: proc() {
         update_balls(dt)
         render_balls()
         
-        rl.DrawText(rl.TextFormat("fps: {0}", rl.GetFPS()), 10, 10, 20, rl.BLACK)
+        rl.DrawText(fmt.ctprintf("fps: {0}", rl.GetFPS()), 10, 10, 20, rl.BLACK)
     rl.EndDrawing()
+
+    free_all(context.temp_allocator)
 }
 
 @(export)

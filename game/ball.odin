@@ -24,7 +24,7 @@ init_balls :: proc(mem: ^GameMemory) {
                 rand.float32_range(30, 120) * (rand.float32() > 0.5 ? 1 : -1),
             },
             radius = rand.float32_range(4, 10),
-            color = rl.PINK,
+            color = rl.BLUE,
         }
     }
 }
