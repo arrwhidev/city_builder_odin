@@ -3,9 +3,11 @@ package main
 import "core:dynlib"
 import "core:os"
 import "core:fmt"
+import vmem "core:mem/virtual"
 
-GameAPI :: struct {
-	init: proc(),
+MEM_SIZE :: 1024 * 1024 * 4 // 4MB
+Dll :: struct {
+	init: proc(mem: []byte),
 	close: proc(),
 	update: proc(),
 	running: proc() -> bool,
@@ -14,41 +16,49 @@ GameAPI :: struct {
 	get_mem_size: proc() -> int,
 }
 
-dll_last_time: os.File_Time = 0
+dll_last_load_time: os.File_Time
+mem: []byte
 
-main :: proc() {	
-	api, ok := load_dll()
+main :: proc() {
+	data, err := vmem.reserve_and_commit(MEM_SIZE)
+	if err != nil {
+		fmt.printfln("failed to reserve memory: {0}", err)
+		os.exit(1)
+	}
+	mem = data
+	defer vmem.release(&data, MEM_SIZE)
+
+	dll, ok := load_dll()
 	if !ok {
 		fmt.printfln("failed to load game dll, exiting program")
 		os.exit(1)
 	}
 
-	api.init()
-	fmt.println("(after init)api.get_mem=", api.get_mem())
-	for api.running() {
-		api.update()
+	dll.init(data)
+	for dll.running() {
+		dll.update()
 
-		new_api, reloaded := maybe_reload_dll()
+		new_dll, reloaded := maybe_reload_dll()
 		if reloaded {
-			new_mem_size := new_api.get_mem_size()
-			if new_mem_size != api.get_mem_size() {
+			new_mem_size := new_dll.get_mem_size()
+			if new_mem_size != dll.get_mem_size() {
 				fmt.println("mem size mismatch, hard resetting...")
-				api.close()
-				new_api.init()
-				api = new_api
+				dll.close()
+				new_dll.init(mem)
+				dll = new_dll
 			} else {
 				fmt.println("mem size match, hot reloading...")
-				old_mem := api.get_mem()
-				m := api.get_mem()
-				api = new_api
-				new_api.hot_reload(m)
+				old_mem := dll.get_mem()
+				m := dll.get_mem()
+				dll = new_dll
+				new_dll.hot_reload(m)
 			}
 		}
 	}
-	api.close()
+	dll.close()
 }
 
-maybe_reload_dll :: proc() -> (api: GameAPI, reloaded: bool = false) {
+maybe_reload_dll :: proc() -> (dll: Dll, reloaded: bool = false) {
 	dll_path :: "out/game.dylib"
 	dll_time, dll_time_err := os.last_write_time_by_name(dll_path)
 	if dll_time_err != os.ERROR_NONE {
@@ -57,7 +67,7 @@ maybe_reload_dll :: proc() -> (api: GameAPI, reloaded: bool = false) {
 		return
 	}
 
-	if dll_time > dll_last_time {
+	if dll_time > dll_last_load_time {
 		fmt.println("dll has changed, reloading...")
 		return load_dll()
 	}
@@ -65,7 +75,7 @@ maybe_reload_dll :: proc() -> (api: GameAPI, reloaded: bool = false) {
 	return 
 }
 
-load_dll :: proc() -> (api: GameAPI, ok: bool = false) {
+load_dll :: proc() -> (dll: Dll, ok: bool = false) {
 	dll_path :: "out/game.dylib"
 	dll_time, dll_time_err := os.last_write_time_by_name(dll_path)
 
@@ -75,18 +85,18 @@ load_dll :: proc() -> (api: GameAPI, ok: bool = false) {
   	}
 	fmt.println("dll time checked successfully, lasted touched at:", dll_time)
 
-	_, ok = dynlib.initialize_symbols(&api, dll_path, "game_")
+	_, ok = dynlib.initialize_symbols(&dll, dll_path, "game_")
 	if !ok {
 		fmt.printfln("failed initializing symbols: {0}", dynlib.last_error())
 		return
 	}
-	fmt.println("dll loaded successfully:", api)
+	fmt.println("dll loaded successfully:", dll)
 
-	if api.init == nil || api.update == nil || api.close == nil || api.running == nil || api.hot_reload == nil || api.get_mem == nil {
+	if dll.init == nil || dll.update == nil || dll.close == nil || dll.running == nil || dll.hot_reload == nil || dll.get_mem == nil {
 		fmt.println("Failed to init game api struct")
 	}
 
-	dll_last_time = dll_time
+	dll_last_load_time = dll_time
 	ok = true
 	return
 }

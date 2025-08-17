@@ -1,9 +1,9 @@
 package game
 
-import "core:strconv/decimal"
-import rl "vendor:raylib"
-
 import "core:fmt"
+import "core:strconv/decimal"
+import "core:mem"
+import rl "vendor:raylib"
 
 GameMemory :: struct {
     window_width: i32,
@@ -11,16 +11,20 @@ GameMemory :: struct {
     balls: [MAX_BALLS]Ball,
 }
 g_mem: ^GameMemory
+g_arena_alloc: mem.Allocator
 
 @(export)
-game_init :: proc() {
-    g_mem = new(GameMemory)
+game_init :: proc(data: []byte) {
+    arena: mem.Arena
+    mem.arena_init(&arena, data)
+    g_arena_alloc = mem.arena_allocator(&arena)
+
+    g_mem = new(GameMemory, g_arena_alloc)
     g_mem^ = GameMemory {
-        window_width = 400,
-        window_height = 200,
+        window_width = 600,
+        window_height = 300,
     }
     init_balls(g_mem)
-
 
     rl.SetTargetFPS(60)
     rl.InitWindow(g_mem.window_width, g_mem.window_height, "hello")
