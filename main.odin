@@ -5,7 +5,7 @@ import "core:os"
 import "core:fmt"
 import vmem "core:mem/virtual"
 
-MEM_SIZE :: 1024 * 1024 * 4 // 4MB
+MEM_SIZE :: 1024 * 1024 * 4
 Dll :: struct {
 	init: proc(mem: []byte),
 	close: proc(),

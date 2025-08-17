@@ -62,6 +62,6 @@ update_balls :: proc(dt: f32) {
 
 render_balls :: proc() {
     for ball in g_mem.balls {
-        rl.DrawCircle(i32(ball.position.x), i32(ball.position.y), ball.radius, ball.color)
+        rl.DrawRectangle(i32(ball.position.x), i32(ball.position.y), 10, 10, ball.color)
     }
 }
