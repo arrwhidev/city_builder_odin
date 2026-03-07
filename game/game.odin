@@ -1,9 +1,17 @@
 package game
 
 import "core:fmt"
-import "core:strconv/decimal"
 import "core:mem"
+import mu "vendor:microui"
 import rl "vendor:raylib"
+
+UIParams :: struct {
+    threshold: f32,
+    ball_radius: f32,
+    speed_multiplier: f32,
+    line_width: f32,
+    show_ui: bool,
+}
 
 GameMemory :: struct {
     // sizing
@@ -18,6 +26,10 @@ GameMemory :: struct {
 
     // resources
     font: rl.Font,
+
+    // UI
+    mu_ctx: mu.Context,
+    ui_params: UIParams,
 
     // game state
     balls: [MAX_BALLS]Ball,
@@ -40,6 +52,15 @@ game_init :: proc(data: []byte) {
     g_mem.window_width = g_mem.width * g_mem.scale
     g_mem.window_height = g_mem.height * g_mem.scale
 
+    // Initialize UI parameters with defaults
+    g_mem.ui_params = UIParams{
+        threshold = 35.0,
+        ball_radius = 2.0,
+        speed_multiplier = 0.5,
+        line_width = 1.0,
+        show_ui = true,
+    }
+
     init_balls(g_mem)
 
     rl.SetTargetFPS(60)
@@ -47,6 +68,9 @@ game_init :: proc(data: []byte) {
 
     // load resources
     g_mem.font = rl.LoadFont("./res/dungeonmode/font/font.ttf")
+
+    // Initialize microui
+    init_ui(&g_mem.mu_ctx)
 }
 
 camera := rl.Camera2D {
@@ -60,10 +84,17 @@ camera := rl.Camera2D {
 game_update :: proc() {
     dt := rl.GetFrameTime()
 
-    if rl.IsKeyDown(.RIGHT) {
-        camera.zoom += 0.01
-    } else if rl.IsKeyDown(.LEFT) {
-        camera.zoom -= 0.01
+    // Toggle UI with C key
+    if rl.IsKeyPressed(.C) {
+        g_mem.ui_params.show_ui = !g_mem.ui_params.show_ui
+    }
+
+    // Process and build UI only when visible
+    if g_mem.ui_params.show_ui {
+        process_ui_input(&g_mem.mu_ctx)
+        mu.begin(&g_mem.mu_ctx)
+        build_ui(&g_mem.mu_ctx, &g_mem.ui_params)
+        mu.end(&g_mem.mu_ctx)
     }
 
     rl.BeginDrawing()
@@ -72,7 +103,14 @@ game_update :: proc() {
             update_balls(dt)
             render_balls()
         rl.EndMode2D()
-        rl.DrawTextEx(g_mem.font, fmt.ctprintf("{0}", rl.GetFPS()), {10, 10}, 20, 1, rl.BLACK)
+
+        if g_mem.ui_params.show_ui {
+            render_ui(&g_mem.mu_ctx)
+        }
+
+        if g_mem.debug {
+            rl.DrawTextEx(g_mem.font, fmt.ctprintf("{0}", rl.GetFPS()), {10, 10}, 20, 1, rl.BLACK)
+        }
     rl.EndDrawing()
 
     free_all(context.temp_allocator)

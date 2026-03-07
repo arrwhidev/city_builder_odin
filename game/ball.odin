@@ -1,13 +1,10 @@
 package game
 
-import "core:fmt"
-import "core:math"
 import "core:math/rand"
 import rl "vendor:raylib"
 
-MAX_BALLS :: 500
-THRESHOLD :: 70
-THRESHOLD_SQUARED :: THRESHOLD * THRESHOLD
+MAX_BALLS :: 1200
+BALL_COLOUR :: rl.Color{ 30, 75, 170, 255 }
 
 Ball :: struct {
     position: rl.Vector2,
@@ -21,41 +18,37 @@ Ball :: struct {
 init_balls :: proc(mem: ^GameMemory) {
     for i in 0..<MAX_BALLS {
         mem.balls[i] = Ball {
-            position = { 
+            position = {
                 rand.float32_range(0, mem.window_width),
                 rand.float32_range(0, mem.window_height),
             },
-            velocity = { 
-                rand.float32_range(30, 120) * (rand.float32() > 0.5 ? 1 : -1), 
+            velocity = {
+                rand.float32_range(30, 120) * (rand.float32() > 0.5 ? 1 : -1),
                 rand.float32_range(30, 120) * (rand.float32() > 0.5 ? 1 : -1),
             },
-            radius = 4,
-            color = { 80, 50, 175, 255 },
+            radius = mem.ui_params.ball_radius,
+            color = BALL_COLOUR,
         }
     }
 }
 
 update_balls :: proc(dt: f32) {
+    speed_mult := g_mem.ui_params.speed_multiplier
     for &ball in g_mem.balls {
-        ball.position.x += ball.velocity.x * dt
-        ball.position.y += ball.velocity.y * dt
+        ball.position.x += ball.velocity.x * dt * speed_mult
+        ball.position.y += ball.velocity.y * dt * speed_mult
+        ball.radius = g_mem.ui_params.ball_radius
         check_bounds_ball(&ball)
     }
 }
 
 render_balls :: proc() {
     for ball in g_mem.balls {
-        cell_width := g_mem.window_width / 16
-        cell_height := g_mem.window_height / 16
-        rect := rl.Rectangle {
-            x = f32(ball.grid_x) * cell_width,
-            y = f32(ball.grid_y) * cell_height,
-            width = cell_width,
-            height = cell_height,
-        }
-
         rl.DrawCircleV(ball.position, ball.radius, ball.color)
     }
+
+    threshold_sq := g_mem.ui_params.threshold * g_mem.ui_params.threshold
+    line_width := g_mem.ui_params.line_width
 
     for i := 0; i < len(g_mem.balls); i += 1 {
         for j := i + 1; j < len(g_mem.balls); j += 1 {
@@ -64,11 +57,12 @@ render_balls :: proc() {
             dx := b2.position.x - b1.position.x
             dy := b2.position.y - b1.position.y
             distance_squared := dx * dx + dy * dy
-            if distance_squared <= THRESHOLD_SQUARED {
-                alpha := ((THRESHOLD_SQUARED - distance_squared) / THRESHOLD_SQUARED) * 255
-                rl.DrawLineEx(b1.position, b2.position, 1.5, { 80, 50, 175, u8(alpha) })
+            if distance_squared <= threshold_sq {
+                alpha := ((threshold_sq - distance_squared) / threshold_sq) * 255
+                c := rl.Color{ BALL_COLOUR[0], BALL_COLOUR[1], BALL_COLOUR[2], u8(alpha) }
+                rl.DrawLineEx(b1.position, b2.position, line_width, c)
             }
-        }    
+        }
     }
 }
 
