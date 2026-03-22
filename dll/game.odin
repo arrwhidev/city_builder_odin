@@ -5,6 +5,9 @@ import "core:mem"
 import rl "vendor:raylib"
 
 GameMemory :: struct {
+    // allocator
+    arena: mem.Arena,
+
     // sizing
     width: f32,
     height: f32,
@@ -19,93 +22,73 @@ GameMemory :: struct {
     // resources
     font: rl.Font,
 
-    // memory
-    permanent_arena: mem.Arena,
-    level_arena: mem.Arena,
-    level_arena_backing: []byte,
-
-    // level
-    current_level_type: LevelType,
-    current_level: LevelProcs,
-    level_data: rawptr,
+    // game data
+    mapData: MapData,
+    ballData: BallData,
 }
+
+// Pointer to game memory.
 g_mem: ^GameMemory
 
 @(export)
 game_init :: proc(data: []byte) {
-    // Set up permanent arena from the full 4MB
-    permanent_arena: mem.Arena
-    mem.arena_init(&permanent_arena, data)
-    permanent_alloc := mem.arena_allocator(&permanent_arena)
+    // Bootstrap: create a temporary arena from the raw block so we can
+    // allocate GameMemory itself inside it.
+    arena: mem.Arena
+    mem.arena_init(&arena, data)
+    arena_allocator := mem.arena_allocator(&arena)
+    context.allocator = arena_allocator
 
-    // Allocate GameMemory from permanent arena
-    g_mem = new(GameMemory, permanent_alloc)
+    // GameMemory now lives at the start of the 4MB block.
+    // The arena's offset advances past it; subsequent allocations follow.
+    g_mem = new(GameMemory)
     g_mem^ = GameMemory {
         width = 640,
         height = 360,
         scale = 2,
         debug = true,
+        arena = arena, // we may not need to store this but probably useful.
     }
     g_mem.window_width = g_mem.width * g_mem.scale
     g_mem.window_height = g_mem.height * g_mem.scale
 
-    // Store the permanent arena in GameMemory (so it persists)
-    g_mem.permanent_arena = permanent_arena
-
-    // Everything after this point is available for level memory
-    g_mem.level_arena_backing = data[permanent_arena.offset:]
-
+    // rl.SetConfigFlags{.VSYNC}
     rl.SetTargetFPS(120)
-    rl.InitWindow(i32(g_mem.window_width), i32(g_mem.window_height), "hello")
-    rl.SetExitKey(.KEY_NULL) // we handle ESC ourselves
+    rl.InitWindow(i32(g_mem.window_width), i32(g_mem.window_height), "zeus")
 
-    // load resources
     g_mem.font = rl.LoadFont("./res/dungeonmode/font/font.ttf")
 
-    // set starting level
-    set_level(.Menu)
+    // Game data init
+    g_mem.mapData = map_init()
+    g_mem.ballData = balls_init()
+
+    used := f64(arena.offset) / (1024 * 1024)
+    total := f64(len(arena.data)) / (1024 * 1024)
+    fmt.printfln("memory used: %.4fMB / %.0fMB (%.3f%%)", used, total, (used / total * 100))
 }
 
 @(export)
 game_update :: proc() {
     dt := rl.GetFrameTime()
 
-    if g_mem.current_level.update != nil {
-        g_mem.current_level.update(dt)
-    }
+    map_update(dt)
+    balls_update(dt)
 
     rl.BeginDrawing()
         rl.ClearBackground(rl.RAYWHITE)
 
-        if g_mem.current_level.render != nil {
-            g_mem.current_level.render()
-        }
-
+        map_render()
+        balls_render()
+        
         if g_mem.debug {
-            rl.DrawTextEx(g_mem.font, fmt.ctprintf("{0}", rl.GetFPS()), {10, 10}, 20, 1, rl.BLACK)
+            rl.DrawTextEx(g_mem.font, fmt.ctprintf("{0}", rl.GetFPS()), {10, 10}, 15, 1, rl.BLACK)
         }
     rl.EndDrawing()
 
+    // Wipe the temp allocator at the end of every frame.
+    // Anything allocated with context.temp_allocator (e.g. fmt.tprintf strings)
+    // is only valid for the current frame — do not hold pointers across frames.
     free_all(context.temp_allocator)
-}
-
-set_level :: proc(level_type: LevelType) {
-    g_mem.level_data = nil
-
-    // reset level arena - this "frees" all level memory
-    mem.arena_init(&g_mem.level_arena, g_mem.level_arena_backing)
-
-    // set and init new level
-    g_mem.current_level_type = level_type
-    g_mem.current_level = LEVEL_PROCS[level_type]
-    if g_mem.current_level.init != nil {
-        g_mem.level_data = g_mem.current_level.init()
-    }
-}
-
-// Returns an allocator for level-scoped memory (freed when level changes)
-level_allocator :: proc() -> mem.Allocator {
-    return mem.arena_allocator(&g_mem.level_arena)
 }
 
 @(export)
@@ -113,25 +96,28 @@ game_running :: proc() -> bool {
     return !rl.WindowShouldClose() && !g_mem.quit
 }
 
+// Returns a raw pointer to GameMemory so main can pass it back on hot reload.
+// The pointer points into the 4MB block — main owns the block, not us.
 @(export)
 game_get_mem :: proc() -> rawptr {
     return g_mem
 }
 
+// Used by main to detect whether GameMemory layout changed between reloads.
+// If the size differs, main performs a hard reset instead of a hot reload.
 @(export)
 game_get_mem_size :: proc() -> int {
     return size_of(GameMemory)
 }
 
+// Hot reload path: the new DLL receives the pointer to existing live data
+// and simply casts it back to ^GameMemory. No copying, no re-initialisation.
 @(export)
 game_hot_reload :: proc(m: rawptr) {
     g_mem = (^GameMemory)(m)
-    // Refresh function pointers from new DLL
-    g_mem.current_level = LEVEL_PROCS[g_mem.current_level_type]
 }
 
 @(export)
 game_close :: proc() {
     rl.CloseWindow()
-    // g_mem lives in the 4MB managed by main, no free needed
 }
