@@ -46,9 +46,9 @@ game_init :: proc(data: []byte) {
     // The arena's offset advances past it; subsequent allocations follow.
     g_mem = new(GameMemory)
     g_mem^ = GameMemory {
-        width = 640,
-        height = 360,
-        scale = 2,
+        width = 1280,
+        height = 640,
+        scale = 1,
         debug = true,
         arena = arena, // we may not need to store this but probably useful.
     }

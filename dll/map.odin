@@ -21,7 +21,7 @@ MapData :: struct {
     cells: [][]Cell,
 }
 
-Visible_Tiles :: struct {
+Visible_Cells :: struct {
     min_x, max_x, min_y, max_y: int,
 }
 
@@ -33,12 +33,7 @@ map_init :: proc() -> MapData {
             cells[y][x] = Cell{
                 x = i32(x),
                 y = i32(y),
-                c = rl.Color{
-                    u8(rl.GetRandomValue(0, 255)), 
-                    u8(rl.GetRandomValue(0, 255)), 
-                    u8(rl.GetRandomValue(0, 255)), 
-                    255,
-                },
+                c = random_color(),
                 kind = rl.GetRandomValue(1, 10) > 5 ? CellKind.Grass : CellKind.Water,
             }
         }
@@ -47,7 +42,7 @@ map_init :: proc() -> MapData {
 }
 
 map_render :: proc() {
-    vt := visible_tiles()
+    vt := visible_cells()
     for y in vt.min_y..<vt.max_y {
         for x in vt.min_x..<vt.max_x {
             cell := get_cell(x, y)
@@ -69,15 +64,15 @@ get_cell :: proc(x, y: int) -> ^Cell {
     return &g_mem.mapData.cells[y][x]
 }
 
-visible_tiles :: proc() -> Visible_Tiles {
-    view_half_w := (g_mem.window_width  / g_mem.camera.zoom) / 2
-    view_half_h := (g_mem.window_height / g_mem.camera.zoom) / 2
+visible_cells :: proc() -> Visible_Cells {
+    viewport_half_w := (g_mem.window_width  / g_mem.camera.zoom) / 2
+    viewport_half_h := (g_mem.window_height / g_mem.camera.zoom) / 2
     cam := &g_mem.camera.target
 
     return {
-        min_x = max(0,        int((cam.x - view_half_w) / MAP_CELL_SIZE)),
-        min_y = max(0,        int((cam.y - view_half_h) / MAP_CELL_SIZE)),
-        max_x = min(MAP_SIZE, int((cam.x + view_half_w) / MAP_CELL_SIZE) + 1),
-        max_y = min(MAP_SIZE, int((cam.y + view_half_h) / MAP_CELL_SIZE) + 1),
+        min_x = max(0,        int((cam.x - viewport_half_w) / MAP_CELL_SIZE)),
+        min_y = max(0,        int((cam.y - viewport_half_h) / MAP_CELL_SIZE)),
+        max_x = min(MAP_SIZE, int((cam.x + viewport_half_w) / MAP_CELL_SIZE) + 1),
+        max_y = min(MAP_SIZE, int((cam.y + viewport_half_h) / MAP_CELL_SIZE) + 1),
     }
 }
