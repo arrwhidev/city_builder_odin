@@ -2,12 +2,19 @@ package game
 
 import rl "vendor:raylib"
 
-MAP_SIZE :: 128
+MAP_SIZE      :: 128
+MAP_CELL_SIZE :: 10
 
 Cell :: struct {
 	x: i32,
     y: i32,
     c: rl.Color,
+    kind: CellKind,
+}
+
+CellKind :: enum {
+    Grass,
+    Water,
 }
 
 MapData :: struct {
@@ -28,6 +35,7 @@ map_init :: proc() -> MapData {
                     u8(rl.GetRandomValue(0, 255)), 
                     255,
                 },
+                kind = rl.GetRandomValue(1, 10) > 5 ? CellKind.Grass : CellKind.Water,
             }
         }
     }
@@ -42,11 +50,16 @@ map_render :: proc() {
     for y in 0..<MAP_SIZE {
         for x in 0..<MAP_SIZE {
             cell := get_cell(x, y)
-            rl.DrawRectangle(cell.x * 10, cell.y * 10, 10, 10, cell.c)
+            rl.DrawRectangle(
+                cell.x * MAP_CELL_SIZE, 
+                cell.y * MAP_CELL_SIZE, 
+                MAP_CELL_SIZE, 
+                MAP_CELL_SIZE, 
+                cell.c,
+            )
         }
     }
 }
 
 map_update :: proc(dt: f32) {
-    
 }
