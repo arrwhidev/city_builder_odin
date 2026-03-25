@@ -4,20 +4,25 @@ import rl "vendor:raylib"
 
 CursorData :: struct {
     is_in_bounds: bool,
+    can_create: bool,
     cell_x: int,
     cell_y: int,
 }
 
 cursor_update :: proc(dt: f32) {
     update_mouse_cell()
+    if !g_mem.cursor.is_in_bounds {
+        return
+    }
 
-    if rl.IsMouseButtonPressed(.LEFT) {
-        g_mem.map_data.cells[g_mem.cursor.cell_y][g_mem.cursor.cell_x].kind = Kind.Road
+    if rl.IsMouseButtonDown(.LEFT) && g_mem.cursor.can_create {
+        set_road_at_cursor()
     }
 }
 
 cursor_render :: proc() {
     if g_mem.cursor.is_in_bounds {
+        rect_colour : = g_mem.cursor.can_create ? rl.BLACK : rl.RED
         rl.DrawRectangleLinesEx(
             rl.Rectangle{
                 f32(g_mem.cursor.cell_x * MAP_CELL_SIZE),
@@ -26,7 +31,7 @@ cursor_render :: proc() {
                 MAP_CELL_SIZE,
             },
             1,
-            rl.ColorAlpha(rl.BLACK, 0.9),
+            rl.ColorAlpha(rect_colour, 0.9),
         )
     }
 }
@@ -50,4 +55,5 @@ update_mouse_cell :: proc() {
     g_mem.cursor.is_in_bounds = true
     g_mem.cursor.cell_x = cell_x
     g_mem.cursor.cell_y = cell_y
+    g_mem.cursor.can_create = is_cursor_cell_creatable()
 }

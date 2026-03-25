@@ -35,17 +35,6 @@ map_init :: proc(map_name: string = "map1") -> MapData {
     return parse_map(map_name)
 }
 
-get_cell_color :: proc(cell: ^Cell) -> rl.Color {
-    switch (cell.map_tile_kind) {
-    case MapTileKind.Grass:
-        return rl.GREEN
-    case MapTileKind.Water:
-        return rl.BLUE
-    case:
-        return rl.MAGENTA // ring the bell!
-    }
-}
-
 map_render :: proc() {
     vt := visible_cells()
     for y in vt.min_y..<vt.max_y {
@@ -99,5 +88,27 @@ visible_cells :: proc() -> Visible_Cells {
         min_y = max(0,              int((cam.y - viewport_half_h) / MAP_CELL_SIZE)),
         max_x = min(get_num_cols(), int((cam.x + viewport_half_w) / MAP_CELL_SIZE) + 1),
         max_y = min(get_num_rows(), int((cam.y + viewport_half_h) / MAP_CELL_SIZE) + 1),
+    }
+}
+
+set_road_at_cursor :: proc() {
+    if g_mem.cursor.is_in_bounds {
+        get_cell(g_mem.cursor.cell_y, g_mem.cursor.cell_x).kind = .Road
+    }
+}
+
+is_cursor_cell_creatable :: proc() -> bool {
+    // For now this is pretty dumb, basically you can create on Grass but not on Water.
+    return get_cell(g_mem.cursor.cell_y, g_mem.cursor.cell_x).map_tile_kind == .Grass
+}
+
+get_cell_color :: proc(cell: ^Cell) -> rl.Color {
+    switch (cell.map_tile_kind) {
+    case MapTileKind.Grass:
+        return rl.GREEN
+    case MapTileKind.Water:
+        return rl.BLUE
+    case:
+        return rl.MAGENTA // ring the bell!
     }
 }
