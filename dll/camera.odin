@@ -14,8 +14,8 @@ camera_update :: proc(dt: f32) {
     if mouse_pos.y < MOUSE_PAN_BUFFER_PIXELS do g_mem.camera.target.y -= CAMERA_PAN_SPEED * dt
 
     // Clamp target so the viewport never shows outside the map.
-    num_cols := g_mem.mapData.num_cols
-    num_rows := g_mem.mapData.num_rows
+    num_cols := g_mem.map_data.num_cols
+    num_rows := g_mem.map_data.num_rows
     map_w  := f32(num_cols * MAP_CELL_SIZE)
     map_h  := f32(num_rows * MAP_CELL_SIZE)
     viewport_half_w := (g_mem.window_width  / g_mem.camera.zoom) / 2

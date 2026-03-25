@@ -20,7 +20,7 @@ BallData :: struct {
 }
 
 get_balls_data :: proc() -> ^BallData {
-    return &g_mem.ballData
+    return &g_mem.ball_data
 }
 
 balls_init :: proc() -> BallData {

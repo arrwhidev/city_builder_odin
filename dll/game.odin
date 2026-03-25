@@ -26,8 +26,9 @@ GameMemory :: struct {
     camera: rl.Camera2D,
 
     // game data
-    mapData: MapData,
-    ballData: BallData,
+    map_data: MapData,
+    ball_data: BallData,
+    cursor: CursorData,
 }
 
 // Pointer to game memory.
@@ -62,13 +63,13 @@ game_init :: proc(data: []byte) {
     g_mem.font = rl.LoadFont("./res/dungeonmode/font/font.ttf")
 
     // Game data init
-    g_mem.mapData = map_init()
-    g_mem.ballData = balls_init()
+    g_mem.map_data = map_init()
+    g_mem.ball_data = balls_init()
 
     // Camera init
     g_mem.camera = rl.Camera2D {
         offset   = {g_mem.window_width / 2, g_mem.window_height / 2}, // screen-space: pin to window centre
-        target   = {f32(g_mem.mapData.num_cols / 2), f32(g_mem.mapData.num_rows / 2)},          // world-space: centre of map
+        target   = {f32(g_mem.map_data.num_cols / 2), f32(g_mem.map_data.num_rows / 2)},          // world-space: centre of map
         rotation = 0,
         zoom     = 2,
     }
@@ -82,6 +83,7 @@ game_init :: proc(data: []byte) {
 game_update :: proc() {
     dt := rl.GetFrameTime()
 
+    cursor_update(dt)
     map_update(dt)
     balls_update(dt)
     camera_update(dt)

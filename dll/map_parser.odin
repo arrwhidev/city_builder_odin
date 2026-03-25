@@ -2,7 +2,6 @@ package game
 
 import "core:os"
 import "core:strings"
-import rl "vendor:raylib"
 
 parse_map :: proc(name: string) -> MapData {
     // Cache the main arena allocator for later.
@@ -29,21 +28,18 @@ parse_map :: proc(name: string) -> MapData {
 
         cells[y] = make([]Cell, len(parts), arena_allocator)
         for token, x in parts {
-            kind: CellKind
-            color: rl.Color
+            map_tile_kind: MapTileKind
             switch token {
             case "g":
-                kind  = .Grass
-                color = rl.GREEN
+                map_tile_kind = .Grass
             case "w":
-                kind  = .Water
-                color = rl.BLUE
+                map_tile_kind = .Water
             }
             cells[y][x] = Cell{
                 x = i32(x), 
                 y = i32(y), 
-                c = color, 
-                kind = kind,
+                map_tile_kind = map_tile_kind,
+                kind = Kind.None,
             }
         }
     }
