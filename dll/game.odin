@@ -61,18 +61,17 @@ game_init :: proc(data: []byte) {
 
     g_mem.font = rl.LoadFont("./res/dungeonmode/font/font.ttf")
 
-    // Camera init
-    map_world_size := f32(MAP_SIZE * MAP_CELL_SIZE)
-    g_mem.camera = rl.Camera2D {
-        offset   = {g_mem.window_width / 2, g_mem.window_height / 2}, // screen-space: pin to window centre
-        target   = {map_world_size / 2, map_world_size / 2},          // world-space: centre of map
-        rotation = 0,
-        zoom     = 2,
-    }
-
     // Game data init
     g_mem.mapData = map_init()
     g_mem.ballData = balls_init()
+
+    // Camera init
+    g_mem.camera = rl.Camera2D {
+        offset   = {g_mem.window_width / 2, g_mem.window_height / 2}, // screen-space: pin to window centre
+        target   = {f32(g_mem.mapData.num_cols / 2), f32(g_mem.mapData.num_rows / 2)},          // world-space: centre of map
+        rotation = 0,
+        zoom     = 2,
+    }
 
     used := f64(arena.offset) / (1024 * 1024)
     total := f64(len(arena.data)) / (1024 * 1024)

@@ -7,10 +7,13 @@ cursor_render :: proc() {
     mouse_world := rl.GetScreenToWorld2D(rl.GetMousePosition(), g_mem.camera)
 
     // Snap to cell grid
-    cell_x := i32(mouse_world.x) / MAP_CELL_SIZE
-    cell_y := i32(mouse_world.y) / MAP_CELL_SIZE
+    cell_x := int(mouse_world.x) / MAP_CELL_SIZE
+    cell_y := int(mouse_world.y) / MAP_CELL_SIZE
 
-    if cell_x < 0 || cell_x >= MAP_SIZE || cell_y < 0 || cell_y >= MAP_SIZE {
+    num_cols := g_mem.mapData.num_cols
+    num_rows := g_mem.mapData.num_rows
+
+    if cell_x < 0 || cell_x >= num_cols || cell_y < 0 || cell_y >= num_rows {
         return
     }
 

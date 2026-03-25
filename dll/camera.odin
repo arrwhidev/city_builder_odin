@@ -3,7 +3,7 @@ package game
 import "core:math"
 import rl "vendor:raylib"
 
-CAMERA_PAN_SPEED :: 200
+CAMERA_PAN_SPEED :: 400
 MOUSE_PAN_BUFFER_PIXELS :: 50
 
 camera_update :: proc(dt: f32) {
@@ -14,8 +14,10 @@ camera_update :: proc(dt: f32) {
     if mouse_pos.y < MOUSE_PAN_BUFFER_PIXELS do g_mem.camera.target.y -= CAMERA_PAN_SPEED * dt
 
     // Clamp target so the viewport never shows outside the map.
-    map_w  := f32(MAP_SIZE * MAP_CELL_SIZE)
-    map_h  := f32(MAP_SIZE * MAP_CELL_SIZE)
+    num_cols := g_mem.mapData.num_cols
+    num_rows := g_mem.mapData.num_rows
+    map_w  := f32(num_cols * MAP_CELL_SIZE)
+    map_h  := f32(num_rows * MAP_CELL_SIZE)
     viewport_half_w := (g_mem.window_width  / g_mem.camera.zoom) / 2
     viewport_half_h := (g_mem.window_height / g_mem.camera.zoom) / 2
     g_mem.camera.target.x = math.clamp(g_mem.camera.target.x, viewport_half_w, map_w - viewport_half_w)

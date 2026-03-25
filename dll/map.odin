@@ -2,7 +2,6 @@ package game
 
 import rl "vendor:raylib"
 
-MAP_SIZE      :: 128
 MAP_CELL_SIZE :: 10
 
 Cell :: struct {
@@ -19,6 +18,8 @@ CellKind :: enum {
 
 MapData :: struct {
     cells: [][]Cell,
+    num_cols: int,
+    num_rows: int,
 }
 
 Visible_Cells :: struct {
@@ -26,19 +27,21 @@ Visible_Cells :: struct {
 }
 
 map_init :: proc() -> MapData {
-    cells := make([][]Cell, MAP_SIZE)
-    for y in 0..<MAP_SIZE {
-        cells[y] = make([]Cell, MAP_SIZE)
-        for x in 0..<MAP_SIZE {
-            cells[y][x] = Cell{
-                x = i32(x),
-                y = i32(y),
-                c = random_color(),
-                kind = rl.GetRandomValue(1, 10) > 5 ? CellKind.Grass : CellKind.Water,
-            }
-        }
-    }
-    return MapData{cells = cells}
+    return parse_map("map1")
+
+    // cells := make([][]Cell, MAP_SIZE)
+    // for y in 0..<MAP_SIZE {
+    //     cells[y] = make([]Cell, MAP_SIZE)
+    //     for x in 0..<MAP_SIZE {
+    //         cells[y][x] = Cell{
+    //             x = i32(x),
+    //             y = i32(y),
+    //             c = random_color(),
+    //             kind = rl.GetRandomValue(1, 10) > 5 ? CellKind.Grass : CellKind.Water,
+    //         }
+    //     }
+    // }
+    // return MapData{cells = cells}
 }
 
 map_render :: proc() {
@@ -70,9 +73,9 @@ visible_cells :: proc() -> Visible_Cells {
     cam := &g_mem.camera.target
 
     return {
-        min_x = max(0,        int((cam.x - viewport_half_w) / MAP_CELL_SIZE)),
-        min_y = max(0,        int((cam.y - viewport_half_h) / MAP_CELL_SIZE)),
-        max_x = min(MAP_SIZE, int((cam.x + viewport_half_w) / MAP_CELL_SIZE) + 1),
-        max_y = min(MAP_SIZE, int((cam.y + viewport_half_h) / MAP_CELL_SIZE) + 1),
+        min_x = max(0,                      int((cam.x - viewport_half_w) / MAP_CELL_SIZE)),
+        min_y = max(0,                      int((cam.y - viewport_half_h) / MAP_CELL_SIZE)),
+        max_x = min(g_mem.mapData.num_cols, int((cam.x + viewport_half_w) / MAP_CELL_SIZE) + 1),
+        max_y = min(g_mem.mapData.num_rows, int((cam.y + viewport_half_h) / MAP_CELL_SIZE) + 1),
     }
 }
