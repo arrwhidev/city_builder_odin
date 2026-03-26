@@ -45,11 +45,7 @@ ui_update :: proc(dt: f32) {
     for row, ri in UI_ROWS {
         for btn, ci in row.buttons {
             if rl.CheckCollisionPointRec(mouse, ui_button_rect(ri, ci)) {
-                if btn.tool_type == .None {
-                    reset_cursor_tool()
-                } else {
-                    set_cursor_tool(btn.tool_type)
-                }
+                set_cursor_tool(btn.tool_type)
             }
         }
     }

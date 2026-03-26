@@ -23,15 +23,7 @@ cursor_update :: proc(dt: f32) {
 
     if rl.IsKeyPressed(.E) do set_cursor_tool(.Eraser)
     if rl.IsKeyPressed(.R) do set_cursor_tool(.Road)
-    if rl.IsMouseButtonDown(.LEFT) {
-        if g_mem.cursor.is_tool_allowed {
-            switch g_mem.cursor.mode {
-            case .None:   break
-            case .Eraser: erase_at_cursor()
-            case .Road:   set_road_at_cursor()
-            }
-        }
-    }
+    if rl.IsMouseButtonDown(.LEFT) do apply_tool_at_cursor()
 }
 
 cursor_render :: proc() {
@@ -48,10 +40,6 @@ cursor_render :: proc() {
             rl.ColorAlpha(rect_colour, 0.9),
         )
     }
-}
-
-reset_cursor_tool :: proc() {
-    g_mem.cursor.mode = .None
 }
 
 set_cursor_tool :: proc(mode: CursorMode) {

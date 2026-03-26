@@ -91,15 +91,14 @@ visible_cells :: proc() -> Visible_Cells {
     }
 }
 
-set_road_at_cursor :: proc() {
-    if g_mem.cursor.is_in_bounds {
-        get_cell(g_mem.cursor.cell_x, g_mem.cursor.cell_y).kind = .Road
-    }
-}
-
-erase_at_cursor :: proc() {
-    if g_mem.cursor.is_in_bounds {
-        get_cell(g_mem.cursor.cell_x, g_mem.cursor.cell_y).kind = .None
+apply_tool_at_cursor :: proc() {
+    if g_mem.cursor.is_in_bounds && g_mem.cursor.is_tool_allowed {
+        cell := get_cell(g_mem.cursor.cell_x, g_mem.cursor.cell_y)
+        switch g_mem.cursor.mode {
+        case .None:   break
+        case .Eraser: cell.kind = .None
+        case .Road:   cell.kind = .Road
+        }
     }
 }
 
