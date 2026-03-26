@@ -87,6 +87,7 @@ game_update :: proc() {
     map_update(dt)
     balls_update(dt)
     camera_update(dt)
+    ui_update(dt)
 
     rl.BeginDrawing()
         rl.ClearBackground(rl.RAYWHITE)
@@ -97,8 +98,11 @@ game_update :: proc() {
             cursor_render()
         rl.EndMode2D()
 
+        // UI renders outside of camera
+        ui_render()
+
         if g_mem.debug {
-            rl.DrawTextEx(g_mem.font, fmt.ctprintf("{0}", rl.GetFPS()), {10, 10}, 15, 1, rl.BLACK)
+            rl.DrawTextEx(g_mem.font, fmt.ctprintf("{0}", rl.GetFPS()), {g_mem.window_width - 55, 10}, 15, 1, rl.BLACK)
         }
     rl.EndDrawing()
 

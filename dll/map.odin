@@ -93,13 +93,14 @@ visible_cells :: proc() -> Visible_Cells {
 
 set_road_at_cursor :: proc() {
     if g_mem.cursor.is_in_bounds {
-        get_cell(g_mem.cursor.cell_y, g_mem.cursor.cell_x).kind = .Road
+        get_cell(g_mem.cursor.cell_x, g_mem.cursor.cell_y).kind = .Road
     }
 }
 
-is_cursor_cell_creatable :: proc() -> bool {
-    // For now this is pretty dumb, basically you can create on Grass but not on Water.
-    return get_cell(g_mem.cursor.cell_y, g_mem.cursor.cell_x).map_tile_kind == .Grass
+erase_at_cursor :: proc() {
+    if g_mem.cursor.is_in_bounds {
+        get_cell(g_mem.cursor.cell_x, g_mem.cursor.cell_y).kind = .None
+    }
 }
 
 get_cell_color :: proc(cell: ^Cell) -> rl.Color {
