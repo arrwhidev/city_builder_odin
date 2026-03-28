@@ -7,8 +7,8 @@ BUTTONS_PER_ROW :: 3
 BUTTON_WIDTH    :: 60
 BUTTON_HEIGHT   :: 30
 BUTTON_MARGIN   :: 4
-PANEL_WIDTH     :: BUTTONS_PER_ROW * BUTTON_WIDTH + ((BUTTONS_PER_ROW + 1) * BUTTON_MARGIN)
 
+UI_PANEL_WIDTH           :: BUTTONS_PER_ROW * BUTTON_WIDTH + ((BUTTONS_PER_ROW + 1) * BUTTON_MARGIN)
 UI_FONT_SPACING          :: 1
 UI_FONT_SIZE             :: 8
 UI_PANEL_BG_COLOUR       :: rl.Color{30,  30,  30,  220}
@@ -25,7 +25,7 @@ UIRow :: struct {
 
 UIButton :: struct {
     label:     cstring,
-    tool_type: CursorMode,
+    tool_type: ToolType,
 }
 
 // Compile-time fixed UI layout
@@ -39,13 +39,13 @@ UI_ROWS :: [?]UIRow{{
 
 ui_update :: proc(dt: f32) {
     mouse := rl.GetMousePosition()
-    if mouse.x > PANEL_WIDTH do return
+    if mouse.x > UI_PANEL_WIDTH do return
     if !rl.IsMouseButtonPressed(.LEFT) do return
 
     for row, ri in UI_ROWS {
         for btn, ci in row.buttons {
             if rl.CheckCollisionPointRec(mouse, ui_button_rect(ri, ci)) {
-                set_cursor_tool(btn.tool_type)
+                g_mem.tool.mode = btn.tool_type
             }
         }
     }
@@ -53,13 +53,13 @@ ui_update :: proc(dt: f32) {
 
 ui_render :: proc() {
     rl.DrawRectangleRec(
-        {0, 0, PANEL_WIDTH, f32(rl.GetScreenHeight())},
+        {0, 0, UI_PANEL_WIDTH, f32(rl.GetScreenHeight())},
         UI_PANEL_BG_COLOUR,
     )
 
     for row, ri in UI_ROWS {
         for btn, ci in row.buttons {
-            selected := g_mem.cursor.mode == btn.tool_type
+            selected := g_mem.tool.mode == btn.tool_type
             rect     := ui_button_rect(ri, ci)
             bg := selected ? UI_BUTTON_SEL_COLOUR : UI_BUTTON_BG_COLOUR
 

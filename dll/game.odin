@@ -29,6 +29,7 @@ GameMemory :: struct {
     map_data: MapData,
     ball_data: BallData,
     cursor: CursorData,
+    tool:   ToolState,
 }
 
 // Pointer to game memory.
@@ -84,6 +85,7 @@ game_update :: proc() {
     dt := rl.GetFrameTime()
 
     cursor_update(dt)
+    tool_update(dt)
     map_update(dt)
     balls_update(dt)
     camera_update(dt)

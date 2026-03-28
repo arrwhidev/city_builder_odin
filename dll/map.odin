@@ -91,17 +91,6 @@ visible_cells :: proc() -> Visible_Cells {
     }
 }
 
-apply_tool_at_cursor :: proc() {
-    if g_mem.cursor.is_in_bounds && g_mem.cursor.is_tool_allowed {
-        cell := get_cell(g_mem.cursor.cell_x, g_mem.cursor.cell_y)
-        switch g_mem.cursor.mode {
-        case .None:   break
-        case .Eraser: cell.kind = .None
-        case .Road:   cell.kind = .Road
-        }
-    }
-}
-
 get_cell_color :: proc(cell: ^Cell) -> rl.Color {
     switch (cell.map_tile_kind) {
     case MapTileKind.Grass:

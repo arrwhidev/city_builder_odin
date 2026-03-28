@@ -4,12 +4,14 @@ import "core:math"
 import rl "vendor:raylib"
 
 CAMERA_PAN_SPEED :: 400
-MOUSE_PAN_BUFFER_PIXELS :: 50
+MOUSE_PAN_BUFFER_PIXELS :: 30
 
 camera_update :: proc(dt: f32) {
+    if !g_mem.cursor.is_in_bounds || g_mem.cursor.zone == .UI do return
+
     mouse_pos := rl.GetMousePosition()
     if mouse_pos.x > (g_mem.window_width - MOUSE_PAN_BUFFER_PIXELS) do g_mem.camera.target.x += CAMERA_PAN_SPEED * dt
-    if mouse_pos.x < MOUSE_PAN_BUFFER_PIXELS do g_mem.camera.target.x -= CAMERA_PAN_SPEED * dt
+    if mouse_pos.x >= UI_PANEL_WIDTH && mouse_pos.x < UI_PANEL_WIDTH + MOUSE_PAN_BUFFER_PIXELS do g_mem.camera.target.x -= CAMERA_PAN_SPEED * dt
     if mouse_pos.y > (g_mem.window_height - MOUSE_PAN_BUFFER_PIXELS) do g_mem.camera.target.y += CAMERA_PAN_SPEED * dt
     if mouse_pos.y < MOUSE_PAN_BUFFER_PIXELS do g_mem.camera.target.y -= CAMERA_PAN_SPEED * dt
 

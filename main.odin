@@ -106,7 +106,6 @@ maybe_reload_dll :: proc() -> (dll: Dll, reloaded: bool = false) {
 load_dll :: proc() -> (dll: Dll, ok: bool = false) {
 	dll_path :: "out/game.dylib"
 	dll_time, dll_time_err := os.last_write_time_by_name(dll_path)
-
 	if dll_time_err != os.ERROR_NONE {
 		fmt.println("Could not fetch last write date of game.dll")
 		return

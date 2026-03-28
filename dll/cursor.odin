@@ -2,33 +2,21 @@ package game
 
 import rl "vendor:raylib"
 
-CursorMode :: enum {
-    None,
-    Eraser,
-    Road,
-}
-
+ScreenZone :: enum { UI, Game }
 CursorData :: struct {
-    mode: CursorMode,
+    zone        : ScreenZone,
     is_in_bounds: bool,
-    is_tool_allowed: bool,
-    cell_x: int,
-    cell_y: int,
+    cell_x:       int,
+    cell_y:       int,
 }
 
 cursor_update :: proc(dt: f32) {
     update_mouse_cell()
-    if !g_mem.cursor.is_in_bounds do return
-    if rl.GetMousePosition().x <= PANEL_WIDTH do return
-
-    if rl.IsKeyPressed(.E) do set_cursor_tool(.Eraser)
-    if rl.IsKeyPressed(.R) do set_cursor_tool(.Road)
-    if rl.IsMouseButtonDown(.LEFT) do apply_tool_at_cursor()
 }
 
 cursor_render :: proc() {
     if g_mem.cursor.is_in_bounds {
-        rect_colour := g_mem.cursor.is_tool_allowed ? rl.BLACK : rl.RED
+        rect_colour := g_mem.tool.can_apply ? rl.BLACK : rl.RED
         rl.DrawRectangleLinesEx(
             rl.Rectangle{
                 f32(g_mem.cursor.cell_x * MAP_CELL_SIZE),
@@ -42,15 +30,24 @@ cursor_render :: proc() {
     }
 }
 
-set_cursor_tool :: proc(mode: CursorMode) {
-    g_mem.cursor.mode = mode
-}
-
 @(private="file")
 update_mouse_cell :: proc() {
-    mouse_world := rl.GetScreenToWorld2D(rl.GetMousePosition(), g_mem.camera)
+    mouse_pos := rl.GetMousePosition()
 
-    // Snap to cell grid
+    in_window := mouse_pos.x >= 0 && mouse_pos.x < g_mem.window_width &&
+                 mouse_pos.y >= 0 && mouse_pos.y < g_mem.window_height
+    g_mem.cursor.is_in_bounds = in_window
+
+    g_mem.cursor.zone = .UI if mouse_pos.x < UI_PANEL_WIDTH else .Game
+
+    if !in_window || g_mem.cursor.zone == .UI {
+        g_mem.cursor.cell_x = 0
+        g_mem.cursor.cell_y = 0
+        return
+    }
+
+    mouse_world := rl.GetScreenToWorld2D(mouse_pos, g_mem.camera)
+
     cell_x := int(mouse_world.x) / MAP_CELL_SIZE
     cell_y := int(mouse_world.y) / MAP_CELL_SIZE
 
@@ -58,20 +55,9 @@ update_mouse_cell :: proc() {
     num_rows := g_mem.map_data.num_rows
 
     if cell_x < 0 || cell_x >= num_cols || cell_y < 0 || cell_y >= num_rows {
-        g_mem.cursor.is_in_bounds = false
         return
     }
-        
-    g_mem.cursor.is_in_bounds = true
+
     g_mem.cursor.cell_x = cell_x
     g_mem.cursor.cell_y = cell_y
-    g_mem.cursor.is_tool_allowed = is_tool_allowed()
-}
-
-is_tool_allowed :: proc() -> bool {
-    cell := get_cell(g_mem.cursor.cell_x, g_mem.cursor.cell_y)
-
-    if g_mem.cursor.mode == .Eraser do return cell.kind == .Road // can only erase road
-    if g_mem.cursor.mode == .Road   do return cell.kind == .None && cell.map_tile_kind == .Grass // can only place road on grass that is not already road
-    return false
 }
